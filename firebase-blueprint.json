@@ -1,0 +1,468 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Registered student, faculty, or administrator profile with private contact PII.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 150
+        },
+        "usn": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "department": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "contact": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 80
+        },
+        "role": {
+          "type": "string",
+          "enum": ["student", "faculty", "admin"]
+        },
+        "accountStatus": {
+          "type": "string",
+          "enum": ["active", "suspended"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "name",
+        "email",
+        "usn",
+        "department",
+        "contact",
+        "role",
+        "accountStatus",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminGrant": {
+      "title": "AdminGrant",
+      "description": "Registry document granting administrator privileges to a user UID.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "grantedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "grantedBy", "createdAt"]
+    },
+    "CampusItem": {
+      "title": "CampusItem",
+      "description": "Publicly browseable lost or found campus item without personal contact PII.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "type": {
+          "type": "string",
+          "enum": ["lost", "found"]
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Mobile", "Laptop", "ID Card", "Wallet", "Books", "Keys", "Accessories", "Other"]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 1000
+        },
+        "date": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "location": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "locationZone": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "imageUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "contactPreference": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Lost", "Found", "Claim Pending", "Returned"]
+        },
+        "moderationStatus": {
+          "type": "string",
+          "enum": ["approved", "pending", "rejected"]
+        },
+        "reporterId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "reporterName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "reporterRole": {
+          "type": "string",
+          "enum": ["student", "faculty", "admin"]
+        },
+        "reporterDepartment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "claimedById": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "type",
+        "category",
+        "description",
+        "date",
+        "location",
+        "locationZone",
+        "imageUrl",
+        "contactPreference",
+        "status",
+        "moderationStatus",
+        "reporterId",
+        "reporterName",
+        "reporterRole",
+        "reporterDepartment",
+        "claimedById",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "OwnershipClaim": {
+      "title": "OwnershipClaim",
+      "description": "Verification claim submitted by a user to recover a reported item.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "itemId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "itemTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "itemType": {
+          "type": "string",
+          "enum": ["lost", "found"]
+        },
+        "itemReporterId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "claimantId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "claimantName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "claimantUsn": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "claimantDepartment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "proofDescription": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1000
+        },
+        "proofImageUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected"]
+        },
+        "reviewerNote": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "approvedContactInfo": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "itemId",
+        "itemTitle",
+        "itemType",
+        "itemReporterId",
+        "claimantId",
+        "claimantName",
+        "claimantUsn",
+        "claimantDepartment",
+        "proofDescription",
+        "proofImageUrl",
+        "status",
+        "reviewerNote",
+        "approvedContactInfo",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "InAppMessage": {
+      "title": "InAppMessage",
+      "description": "Safe in-app message between campus users regarding an item without leaking raw PII.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "itemId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "itemTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "senderId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "senderName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "recipientId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "recipientName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "read": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "itemId",
+        "itemTitle",
+        "senderId",
+        "senderName",
+        "recipientId",
+        "recipientName",
+        "body",
+        "read",
+        "createdAt"
+      ]
+    },
+    "UserNotification": {
+      "title": "UserNotification",
+      "description": "Real-time notification for item matches, claims, and status updates.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "actorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "type": {
+          "type": "string",
+          "enum": ["match", "claim_received", "claim_approved", "claim_rejected", "message", "moderation"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "itemId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "read": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "actorId",
+        "type",
+        "title",
+        "message",
+        "itemId",
+        "read",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profiles storing college ID, department, role, and protected contact info."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminGrant" },
+      "description": "Admin role registry documents."
+    },
+    "/items/{itemId}": {
+      "schema": { "$ref": "#/entities/CampusItem" },
+      "description": "Lost and found item reports."
+    },
+    "/claims/{claimId}": {
+      "schema": { "$ref": "#/entities/OwnershipClaim" },
+      "description": "Ownership verification claims for reported items."
+    },
+    "/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/InAppMessage" },
+      "description": "Safe in-app contact messages between campus members."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/UserNotification" },
+      "description": "Notifications for matches, claims, and moderation actions."
+    }
+  }
+}

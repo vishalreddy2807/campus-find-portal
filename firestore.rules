@@ -1,0 +1,390 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core identity and validation primitives
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdminEmail() {
+      return isSignedIn() &&
+        request.auth.token.email == 'dhaneshreddyg@gmail.com' &&
+        request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isAdminEmail() || (
+        isSignedIn() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Entity validation helpers (matching firebase-blueprint.json)
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'uid', 'name', 'email', 'usn', 'department', 'contact',
+          'role', 'accountStatus', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid', 'name', 'email', 'usn', 'department', 'contact',
+          'role', 'accountStatus', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.uid) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+        data.usn is string && data.usn.size() >= 1 && data.usn.size() <= 40 &&
+        data.department is string && data.department.size() >= 1 && data.department.size() <= 80 &&
+        data.contact is string && data.contact.size() <= 80 &&
+        data.role in ['student', 'faculty', 'admin'] &&
+        data.accountStatus in ['active', 'suspended'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAdminGrant(data) {
+      return data.keys().hasAll(['uid', 'grantedBy', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'grantedBy', 'createdAt']) &&
+        isValidId(data.uid) &&
+        isValidId(data.grantedBy) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidItem(data) {
+      return data.keys().hasAll([
+          'id', 'title', 'type', 'category', 'description', 'date',
+          'location', 'locationZone', 'imageUrl', 'contactPreference',
+          'status', 'moderationStatus', 'reporterId', 'reporterName',
+          'reporterRole', 'reporterDepartment', 'claimedById',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'title', 'type', 'category', 'description', 'date',
+          'location', 'locationZone', 'imageUrl', 'contactPreference',
+          'status', 'moderationStatus', 'reporterId', 'reporterName',
+          'reporterRole', 'reporterDepartment', 'claimedById',
+          'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 120 &&
+        data.type in ['lost', 'found'] &&
+        data.category in ['Mobile', 'Laptop', 'ID Card', 'Wallet', 'Books', 'Keys', 'Accessories', 'Other'] &&
+        data.description is string && data.description.size() >= 5 && data.description.size() <= 1000 &&
+        data.date is string && data.date.size() >= 4 && data.date.size() <= 20 &&
+        data.location is string && data.location.size() >= 2 && data.location.size() <= 120 &&
+        data.locationZone is string && data.locationZone.size() >= 2 && data.locationZone.size() <= 80 &&
+        data.imageUrl is string && data.imageUrl.size() <= 500 &&
+        data.contactPreference is string && data.contactPreference.size() <= 120 &&
+        data.status in ['Lost', 'Found', 'Claim Pending', 'Returned'] &&
+        data.moderationStatus in ['approved', 'pending', 'rejected'] &&
+        isValidId(data.reporterId) &&
+        data.reporterName is string && data.reporterName.size() >= 1 && data.reporterName.size() <= 100 &&
+        data.reporterRole in ['student', 'faculty', 'admin'] &&
+        data.reporterDepartment is string && data.reporterDepartment.size() >= 1 && data.reporterDepartment.size() <= 80 &&
+        data.claimedById is string && data.claimedById.size() <= 128 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidClaim(data) {
+      return data.keys().hasAll([
+          'id', 'itemId', 'itemTitle', 'itemType', 'itemReporterId',
+          'claimantId', 'claimantName', 'claimantUsn', 'claimantDepartment',
+          'proofDescription', 'proofImageUrl', 'status', 'reviewerNote',
+          'approvedContactInfo', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'itemId', 'itemTitle', 'itemType', 'itemReporterId',
+          'claimantId', 'claimantName', 'claimantUsn', 'claimantDepartment',
+          'proofDescription', 'proofImageUrl', 'status', 'reviewerNote',
+          'approvedContactInfo', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.itemId) &&
+        data.itemTitle is string && data.itemTitle.size() >= 1 && data.itemTitle.size() <= 120 &&
+        data.itemType in ['lost', 'found'] &&
+        isValidId(data.itemReporterId) &&
+        isValidId(data.claimantId) &&
+        data.claimantName is string && data.claimantName.size() >= 1 && data.claimantName.size() <= 100 &&
+        data.claimantUsn is string && data.claimantUsn.size() >= 1 && data.claimantUsn.size() <= 40 &&
+        data.claimantDepartment is string && data.claimantDepartment.size() >= 1 && data.claimantDepartment.size() <= 80 &&
+        data.proofDescription is string && data.proofDescription.size() >= 10 && data.proofDescription.size() <= 1000 &&
+        data.proofImageUrl is string && data.proofImageUrl.size() <= 500 &&
+        data.status in ['pending', 'approved', 'rejected'] &&
+        data.reviewerNote is string && data.reviewerNote.size() <= 500 &&
+        data.approvedContactInfo is string && data.approvedContactInfo.size() <= 200 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll([
+          'id', 'itemId', 'itemTitle', 'senderId', 'senderName',
+          'recipientId', 'recipientName', 'body', 'read', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'itemId', 'itemTitle', 'senderId', 'senderName',
+          'recipientId', 'recipientName', 'body', 'read', 'createdAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.itemId) &&
+        data.itemTitle is string && data.itemTitle.size() >= 1 && data.itemTitle.size() <= 120 &&
+        isValidId(data.senderId) &&
+        data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 100 &&
+        isValidId(data.recipientId) &&
+        data.recipientName is string && data.recipientName.size() >= 1 && data.recipientName.size() <= 100 &&
+        data.body is string && data.body.size() >= 1 && data.body.size() <= 1000 &&
+        data.read is bool &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll([
+          'id', 'userId', 'actorId', 'type', 'title', 'message',
+          'itemId', 'read', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'userId', 'actorId', 'type', 'title', 'message',
+          'itemId', 'read', 'createdAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.userId) &&
+        isValidId(data.actorId) &&
+        data.type in ['match', 'claim_received', 'claim_approved', 'claim_rejected', 'message', 'moderation'] &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+        data.message is string && data.message.size() >= 1 && data.message.size() <= 400 &&
+        data.itemId is string && data.itemId.size() <= 128 &&
+        data.read is bool &&
+        data.createdAt is timestamp;
+    }
+
+    // Users collection (PII strictly isolated to owner and admin)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn() &&
+        isValidId(userId) &&
+        userId == request.auth.uid &&
+        isValidUserProfile(incoming()) &&
+        incoming().uid == request.auth.uid &&
+        incoming().accountStatus == 'active' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (incoming().role in ['student', 'faculty'] || isAdminEmail());
+      allow update: if isSignedIn() &&
+        isValidId(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().email == existing().email &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            isOwner(userId) &&
+            incoming().role == existing().role &&
+            incoming().accountStatus == existing().accountStatus &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['name', 'usn', 'department', 'contact', 'updatedAt'])
+          ) ||
+          (
+            isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['name', 'usn', 'department', 'contact', 'role', 'accountStatus', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(userId) && isAdmin();
+    }
+
+    // Admin registry
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(userId) && isAdmin() && isValidAdminGrant(incoming()) && incoming().uid == userId && incoming().grantedBy == request.auth.uid && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isValidId(userId) && isAdmin() && userId != request.auth.uid;
+    }
+
+    // Lost & Found items catalog (no raw PII stored on item documents)
+    match /items/{itemId} {
+      allow get: if isValidId(itemId) && (
+        existing().moderationStatus == 'approved' ||
+        (isSignedIn() && existing().reporterId == request.auth.uid) ||
+        isAdmin()
+      );
+      allow list: if resource.data.moderationStatus == 'approved' ||
+        (isSignedIn() && resource.data.reporterId == request.auth.uid) ||
+        isAdminEmail();
+      allow create: if isSignedIn() &&
+        isValidId(itemId) &&
+        isValidItem(incoming()) &&
+        incoming().id == itemId &&
+        incoming().reporterId == request.auth.uid &&
+        incoming().claimedById == '' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (incoming().moderationStatus == 'approved' || isAdmin());
+      allow update: if isSignedIn() &&
+        isValidId(itemId) &&
+        isValidItem(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().reporterId == existing().reporterId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'title', 'type', 'category', 'description', 'date',
+              'location', 'locationZone', 'imageUrl', 'contactPreference',
+              'status', 'moderationStatus', 'claimedById', 'updatedAt'
+            ])
+          ) ||
+          (
+            existing().reporterId == request.auth.uid &&
+            existing().status != 'Returned' &&
+            incoming().moderationStatus == existing().moderationStatus &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'title', 'type', 'category', 'description', 'date',
+              'location', 'locationZone', 'imageUrl', 'contactPreference',
+              'status', 'claimedById', 'updatedAt'
+            ])
+          ) ||
+          (
+            existing().reporterId != request.auth.uid &&
+            existing().moderationStatus == 'approved' &&
+            existing().status in ['Lost', 'Found'] &&
+            incoming().status == 'Claim Pending' &&
+            incoming().claimedById == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'claimedById', 'updatedAt'])
+          )
+        );
+      allow delete: if isSignedIn() &&
+        isValidId(itemId) &&
+        (existing().reporterId == request.auth.uid || isAdmin());
+    }
+
+    // Ownership claims
+    match /claims/{claimId} {
+      allow get: if isSignedIn() &&
+        isValidId(claimId) &&
+        (
+          existing().claimantId == request.auth.uid ||
+          existing().itemReporterId == request.auth.uid ||
+          isAdmin()
+        );
+      allow list: if isSignedIn() && (
+        resource.data.claimantId == request.auth.uid ||
+        resource.data.itemReporterId == request.auth.uid ||
+        isAdminEmail()
+      );
+      allow create: if isSignedIn() &&
+        isValidId(claimId) &&
+        isValidClaim(incoming()) &&
+        incoming().id == claimId &&
+        incoming().claimantId == request.auth.uid &&
+        incoming().claimantId != incoming().itemReporterId &&
+        incoming().status == 'pending' &&
+        incoming().reviewerNote == '' &&
+        incoming().approvedContactInfo == '' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/items/$(incoming().itemId)) &&
+        get(/databases/$(database)/documents/items/$(incoming().itemId)).data.reporterId == incoming().itemReporterId;
+      allow update: if isSignedIn() &&
+        isValidId(claimId) &&
+        isValidClaim(incoming()) &&
+        existing().status == 'pending' &&
+        incoming().id == existing().id &&
+        incoming().itemId == existing().itemId &&
+        incoming().itemReporterId == existing().itemReporterId &&
+        incoming().claimantId == existing().claimantId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (existing().itemReporterId == request.auth.uid || isAdmin()) &&
+        incoming().status in ['approved', 'rejected'] &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'reviewerNote', 'approvedContactInfo', 'updatedAt']);
+      allow delete: if isSignedIn() &&
+        isValidId(claimId) &&
+        (
+          (existing().claimantId == request.auth.uid && existing().status == 'pending') ||
+          isAdmin()
+        );
+    }
+
+    // Safe in-app contact messages
+    match /messages/{messageId} {
+      allow get: if isSignedIn() &&
+        isValidId(messageId) &&
+        (
+          existing().senderId == request.auth.uid ||
+          existing().recipientId == request.auth.uid ||
+          isAdmin()
+        );
+      allow list: if isSignedIn() && (
+        resource.data.senderId == request.auth.uid ||
+        resource.data.recipientId == request.auth.uid ||
+        isAdminEmail()
+      );
+      allow create: if isSignedIn() &&
+        isValidId(messageId) &&
+        isValidMessage(incoming()) &&
+        incoming().id == messageId &&
+        incoming().senderId == request.auth.uid &&
+        incoming().senderId != incoming().recipientId &&
+        incoming().read == false &&
+        incoming().createdAt == request.time &&
+        exists(/databases/$(database)/documents/items/$(incoming().itemId));
+      allow update: if isSignedIn() &&
+        isValidId(messageId) &&
+        isValidMessage(incoming()) &&
+        existing().recipientId == request.auth.uid &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['read']);
+      allow delete: if isValidId(messageId) && isAdmin();
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow get: if isSignedIn() &&
+        isValidId(notificationId) &&
+        (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdminEmail()
+      );
+      allow create: if isSignedIn() &&
+        isValidId(notificationId) &&
+        isValidNotification(incoming()) &&
+        incoming().id == notificationId &&
+        incoming().actorId == request.auth.uid &&
+        incoming().read == false &&
+        incoming().createdAt == request.time;
+      allow update: if isSignedIn() &&
+        isValidId(notificationId) &&
+        isValidNotification(incoming()) &&
+        (existing().userId == request.auth.uid || isAdmin()) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['read']);
+      allow delete: if isSignedIn() &&
+        isValidId(notificationId) &&
+        (existing().userId == request.auth.uid || isAdmin());
+    }
+  }
+}

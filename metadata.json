@@ -1,0 +1,6 @@
+{
+  "name": "Campus Find – College Lost & Found Portal",
+  "description": "Centralized college portal for students, faculty, and staff to report lost items, post found belongings, verify ownership claims, and reconnect on campus.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
